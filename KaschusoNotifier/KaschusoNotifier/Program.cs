@@ -8,10 +8,12 @@ namespace KaschusoNotifier
 {
     internal class Program
     {
+        private static readonly MailIssuer MailIssuer = new MailIssuer();
         public static IWebDriver Driver { get; private set; }
 
         private static void Main(string[] args)
         {
+            Config.Load();
             Credentials.Load();
             Driver = CreateWebDriver(true);
             if (!Login())
@@ -20,14 +22,20 @@ namespace KaschusoNotifier
                 Driver.Quit();
                 return;
             }
+
             Console.WriteLine("Login successful");
 
-            while (!IsUnconfirmedMarkAvailable())
-            {
-                Console.WriteLine("No unconfirmed mark found");
-                Thread.Sleep(5000);
-                Driver.Navigate().Refresh();
-            }
+            while (true)
+                if (!IsUnconfirmedMarkAvailable())
+                {
+                    Console.WriteLine("No unconfirmed mark found");
+                    Thread.Sleep(5000);
+                    Driver.Navigate().Refresh();
+                }
+                else
+                {
+                    MailIssuer.Notify(new[] {new Mark("Test", "6.0"), new Mark("Test2", "1.0")});
+                }
         }
 
         private static bool Login()

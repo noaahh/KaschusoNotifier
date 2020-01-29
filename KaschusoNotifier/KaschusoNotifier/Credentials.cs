@@ -7,9 +7,13 @@ namespace KaschusoNotifier
     {
         private const string FilePath = "credentials.json";
 
-        public static string Username { get; set; }
+        public static string Username { get; private set; }
 
-        public static string Password { get; set; }
+        public static string Password { get; private set; }
+
+        public static string MailUsername { get; private set; }
+
+        public static string MailPassword { get; private set; }
 
         public static void Load()
         {
@@ -18,6 +22,8 @@ namespace KaschusoNotifier
                 .Build();
             Username = credentials.GetChildren().FirstOrDefault(x => x.Key == "username")?.Value;
             Password = credentials.GetChildren().FirstOrDefault(x => x.Key == "password")?.Value;
+            MailUsername = credentials.GetChildren().FirstOrDefault(x => x.Key == "mailUsername")?.Value;
+            MailPassword = credentials.GetChildren().FirstOrDefault(x => x.Key == "mailPassword")?.Value;
         }
     }
 }
