@@ -4,11 +4,14 @@ namespace KaschusoNotifier
 {
     public class Mark
     {
-        public Mark(string name, string value)
+        public Mark(string subject, string name, string value)
         {
+            Subject = subject;
             Name = name;
             Value = value;
         }
+
+        public string Subject { get; }
 
         public string Name { get; }
 
@@ -16,7 +19,7 @@ namespace KaschusoNotifier
 
         public static string GenerateBody(Mark[] marks)
         {
-            return marks.Aggregate("", (current, mark) => current + $"{mark.Name}: {mark.Value}\n");
+            return marks.Aggregate("", (current, mark) => current + $"{mark.Subject} | {mark.Name}: {mark.Value}\n\n");
         }
     }
 }

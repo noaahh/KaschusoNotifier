@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using OpenQA.Selenium;
@@ -9,13 +10,15 @@ namespace KaschusoNotifier
     internal class Program
     {
         private static readonly MailIssuer MailIssuer = new MailIssuer();
+
+        private static readonly List<Mark> UnconfirmedMarks = new List<Mark>();
         public static IWebDriver Driver { get; private set; }
 
         private static void Main(string[] args)
         {
             Config.Load();
             Credentials.Load();
-            Driver = CreateWebDriver(true);
+            Driver = CreateWebDriver(Config.Headless);
             if (!Login())
             {
                 Console.WriteLine("Login failed. Please check your credentials");
@@ -26,16 +29,20 @@ namespace KaschusoNotifier
             Console.WriteLine("Login successful");
 
             while (true)
-                if (!IsUnconfirmedMarkAvailable())
+            {
+                var unconfirmedMarks = GetUnconfirmedMarks();
+                foreach (var unconfirmedMark in unconfirmedMarks) Console.WriteLine(unconfirmedMark.Name);
+                if (unconfirmedMarks.Length > 0)
+                {
+                    MailIssuer.Notify(unconfirmedMarks);
+                }
+                else
                 {
                     Console.WriteLine("No unconfirmed mark found");
                     Thread.Sleep(5000);
                     Driver.Navigate().Refresh();
                 }
-                else
-                {
-                    MailIssuer.Notify(new[] {new Mark("Test", "6.0"), new Mark("Test2", "1.0")});
-                }
+            }
         }
 
         private static bool Login()
@@ -52,11 +59,23 @@ namespace KaschusoNotifier
             return Driver.Title == "schulNetz";
         }
 
-        private static bool IsUnconfirmedMarkAvailable()
+        private static Mark[] GetUnconfirmedMarks()
         {
-            var webElements = Driver.FindElements(
-                By.TagName("span"));
-            return webElements.FirstOrDefault(x => x.Text.Equals("Sie haben alle Noten bestätigt.")) == null;
+            var unconfirmedTables =
+                Driver.FindElements(By.TagName("table"));
+
+            var unconfirmedTable = unconfirmedTables[2];
+            var rows = unconfirmedTable.FindElements(By.XPath(".//tbody/tr"));
+            var discoveredMarks = new List<Mark>();
+            foreach (var row in rows)
+            {
+                var cells = row.FindElements(By.XPath(".//td"));
+                if (cells.All(x => UnconfirmedMarks.All(y => y.Subject != x.Text)))
+                    discoveredMarks.Add(new Mark(cells[0].Text, cells[1].Text, cells[3].Text));
+            }
+
+            UnconfirmedMarks.AddRange(discoveredMarks);
+            return discoveredMarks.ToArray();
         }
 
         private static IWebDriver CreateWebDriver(bool headless)

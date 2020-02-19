@@ -1,3 +1,4 @@
 {
-  "toAddress": "your@toaddress.com"
+  "headless": false,
+  "toAddress": "thenoahleuenberger@gmail.com"
 }
