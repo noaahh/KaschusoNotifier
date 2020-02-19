@@ -66,6 +66,10 @@ namespace KaschusoNotifier
 
             var unconfirmedTable = unconfirmedTables[2];
             var rows = unconfirmedTable.FindElements(By.XPath(".//tbody/tr"));
+            if (rows.Any(x => x.Text.Contains("Sie haben alle")))
+            {
+                return new Mark[0];
+            }
             var discoveredMarks = new List<Mark>();
             foreach (var row in rows)
             {
