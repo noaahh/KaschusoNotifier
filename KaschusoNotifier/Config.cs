@@ -12,13 +12,21 @@ namespace KaschusoNotifier
 
         public static string ToAddress { get; private set; }
 
+        public static string URL { get; private set; }
+
         public static void Load()
         {
-            IConfiguration credentials = new ConfigurationBuilder()
+            IConfiguration config = new ConfigurationBuilder()
                 .AddJsonFile(FilePath, true, true)
                 .Build();
-            Headless = Convert.ToBoolean(credentials.GetChildren().FirstOrDefault(x => x.Key == "headless")?.Value);
-            ToAddress = credentials.GetChildren().FirstOrDefault(x => x.Key == "toAddress")?.Value;
+            Headless = Convert.ToBoolean(FindValue(config, "headless"));
+            ToAddress = FindValue(config, "toAddress");
+            URL = FindValue(config, "url");
+        }
+
+        public static string FindValue(IConfiguration config, string key)
+        {
+            return config.GetChildren().FirstOrDefault(x => x.Key == key)?.Value;
         }
     }
 }

@@ -47,7 +47,7 @@ namespace KaschusoNotifier
 
         private static bool Login()
         {
-            Driver.Url = "https://kaschuso.so.ch/gibsso";
+            Driver.Url = Config.URL;
             var userIdControl = Driver.FindElement(By.Name("userid"));
             userIdControl.Click();
             userIdControl.SendKeys(Credentials.Username);
