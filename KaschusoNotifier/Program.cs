@@ -9,15 +9,20 @@ namespace KaschusoNotifier
 {
     internal class Program
     {
-        private static readonly MailIssuer MailIssuer = new MailIssuer();
+        private readonly Config config = new Config();
 
-        private static readonly List<Mark> UnconfirmedMarks = new List<Mark>();
-        public static IWebDriver Driver { get; private set; }
+        private readonly MailIssuer MailIssuer = new MailIssuer();
 
-        private static void Main(string[] args)
+        private readonly List<Mark> UnconfirmedMarks = new List<Mark>();
+
+        private readonly IWebDriver Driver;
+
+        public Program() => Driver = CreateWebDriver(config.Headless);
+
+        private static void Main(string[] args) => new Program().Run();
+
+        public void Run()
         {
-            Config.Load();
-            Driver = CreateWebDriver(Config.Headless);
             if (!Login())
             {
                 Console.WriteLine("Login failed. Please check your credentials");
@@ -44,21 +49,21 @@ namespace KaschusoNotifier
             }
         }
 
-        private static bool Login()
+        private bool Login()
         {
-            Driver.Url = Config.URL;
+            Driver.Url = config.URL;
             var userIdControl = Driver.FindElement(By.Name("userid"));
             userIdControl.Click();
-            userIdControl.SendKeys(Config.Username);
+            userIdControl.SendKeys(config.Username);
 
             var passwordControl = Driver.FindElement(By.Name("password"));
             passwordControl.Click();
-            passwordControl.SendKeys(Config.Password);
+            passwordControl.SendKeys(config.Password);
             passwordControl.Submit();
             return Driver.Title == "schulNetz";
         }
 
-        private static Mark[] GetUnconfirmedMarks()
+        private Mark[] GetUnconfirmedMarks()
         {
             var unconfirmedTables =
                 Driver.FindElements(By.TagName("table"));
@@ -81,7 +86,7 @@ namespace KaschusoNotifier
             return discoveredMarks.ToArray();
         }
 
-        private static IWebDriver CreateWebDriver(bool headless)
+        private IWebDriver CreateWebDriver(bool headless)
         {
             var options = new ChromeOptions();
             if (headless) options.AddArgument("headless");

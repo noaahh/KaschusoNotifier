@@ -8,34 +8,36 @@ namespace KaschusoNotifier
     {
         private const string FilePath = "config.json";
 
-        public static bool Headless { get; private set; }
+        private readonly IConfiguration configuration;
 
-        public static string URL { get; private set; }
+        public bool Headless { get; private set; }
 
-        public static string Username { get; private set; }
+        public string URL { get; private set; }
 
-        public static string Password { get; private set; }
+        public string Username { get; private set; }
 
-        public static string MailUsername { get; private set; }
+        public string Password { get; private set; }
 
-        public static string MailPassword { get; private set; }
+        public string MailUsername { get; private set; }
 
-        public static void Load()
+        public string MailPassword { get; private set; }
+
+        public Config()
         {
-            IConfiguration config = new ConfigurationBuilder()
+            configuration = new ConfigurationBuilder()
                 .AddJsonFile(FilePath, true, true)
                 .Build();
-            Headless = Convert.ToBoolean(FindValue(config, "headless"));
-            URL = FindValue(config, "url");
-            Username = FindValue(config, "username");
-            Password = FindValue(config, "password");
-            MailUsername = FindValue(config, "mailUsername");
-            MailPassword = FindValue(config, "mailPassword");
+            Headless = Convert.ToBoolean(FindValue("headless"));
+            URL = FindValue("url");
+            Username = FindValue("username");
+            Password = FindValue("password");
+            MailUsername = FindValue("mailUsername");
+            MailPassword = FindValue("mailPassword");
         }
 
-        public static string FindValue(IConfiguration config, string key)
+        public string FindValue(string key)
         {
-            return config.GetChildren().FirstOrDefault(x => x.Key == key)?.Value;
+            return configuration.GetChildren().FirstOrDefault(x => x.Key == key)?.Value;
         }
     }
 }

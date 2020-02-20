@@ -6,6 +6,8 @@ namespace KaschusoNotifier
 {
     public class MailIssuer
     {
+        private readonly Config config = new Config();
+
         private const string MailSubject = "KaschusoNotifier";
 
         public bool Notify(Mark[] marks)
@@ -16,10 +18,10 @@ namespace KaschusoNotifier
                 Port = 587,
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(Config.MailUsername, Config.MailPassword),
+                Credentials = new NetworkCredential(config.MailUsername, config.MailPassword),
                 Timeout = 20000
             };
-            var message = new MailMessage(Config.MailUsername, Config.MailUsername)
+            var message = new MailMessage(config.MailUsername, config.MailUsername)
             {
                 Subject = MailSubject,
                 Body = Mark.GenerateBody(marks)
