@@ -16,10 +16,10 @@ namespace KaschusoNotifier
                 Port = 587,
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(Credentials.MailUsername, Credentials.MailPassword),
+                Credentials = new NetworkCredential(Config.MailUsername, Config.MailPassword),
                 Timeout = 20000
             };
-            var message = new MailMessage(Credentials.MailUsername, Config.ToAddress)
+            var message = new MailMessage(Config.MailUsername, Config.MailUsername)
             {
                 Subject = MailSubject,
                 Body = Mark.GenerateBody(marks)

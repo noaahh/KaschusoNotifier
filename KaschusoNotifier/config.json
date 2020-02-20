@@ -1,5 +1,8 @@
 {
   "headless": false,
-  "toAddress": "imreceivingthis@mymail.com",
-  "url": "https://kaschuso.so.ch/gibsso/"
+  "url": "https://kaschuso.so.ch/gibsso/",
+  "username": "firstname.name",
+  "password": "hopefullySecure",
+  "mailUsername": "your.email@mail.com",
+  "mailPassword": "hopefullySecureToo."
 }

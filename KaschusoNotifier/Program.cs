@@ -17,7 +17,6 @@ namespace KaschusoNotifier
         private static void Main(string[] args)
         {
             Config.Load();
-            Credentials.Load();
             Driver = CreateWebDriver(Config.Headless);
             if (!Login())
             {
@@ -50,11 +49,11 @@ namespace KaschusoNotifier
             Driver.Url = Config.URL;
             var userIdControl = Driver.FindElement(By.Name("userid"));
             userIdControl.Click();
-            userIdControl.SendKeys(Credentials.Username);
+            userIdControl.SendKeys(Config.Username);
 
             var passwordControl = Driver.FindElement(By.Name("password"));
             passwordControl.Click();
-            passwordControl.SendKeys(Credentials.Password);
+            passwordControl.SendKeys(Config.Password);
             passwordControl.Submit();
             return Driver.Title == "schulNetz";
         }
