@@ -10,7 +10,7 @@ namespace KaschusoNotifier
         public static void Main(string[] args)
         {
             var config = new Config();
-            new Notifier(CreateWebDriver(config), new Config()).Run();
+            new Notifier(CreateWebDriver(config), config).Run();
         }
 
         private static IWebDriver CreateWebDriver(Config config)
