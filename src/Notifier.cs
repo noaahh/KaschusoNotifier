@@ -7,40 +7,39 @@ using OpenQA.Selenium.Chrome;
 
 namespace KaschusoNotifier
 {
-    internal class Program
+    public class Notifier
     {
-        private readonly Config config = new Config();
+        private readonly MailIssuer _mailIssuer = new MailIssuer();
+        private readonly List<Mark> _marks = new List<Mark>();
+        private readonly IWebDriver _driver;
+        private readonly Config _config;
 
-        private readonly MailIssuer MailIssuer = new MailIssuer();
-
-        private readonly List<Mark> marks = new List<Mark>();
-
-        private readonly IWebDriver driver;
-
-        public Program() => driver = CreateWebDriver(config.Headless);
-
-        private static void Main(string[] args) => new Program().Run();
+        public Notifier(IWebDriver driver, Config config)
+        {
+            _driver = driver;
+            _config = config;
+        }
 
         public void Run()
         {
             if (!Login())
             {
                 Console.WriteLine("Login failed. Please check your credentials");
-                driver.Quit();
+                _driver.Quit();
                 return;
             }
 
             Console.WriteLine("Login successful");
-            
-            marks.AddRange(GetNewMarks());
+
+            _marks.AddRange(GetNewMarks());
 
             while (true)
             {
                 var newMarks = GetNewMarks();
                 foreach (var newMark in newMarks) Console.WriteLine(newMark.Name);
-                if (newMarks.Length > 0 && MailIssuer.Notify(newMarks))
+                if (newMarks.Length > 0 && _mailIssuer.Notify(newMarks))
                 {
-                    marks.AddRange(newMarks);
+                    _marks.AddRange(newMarks);
                 }
                 else
                 {
@@ -52,23 +51,23 @@ namespace KaschusoNotifier
 
         private bool Login()
         {
-            driver.Url = config.URL;
-            var userIdControl = driver.FindElement(By.Name("userid"));
+            _driver.Url = _config.KaschusoUrl;
+            var userIdControl = _driver.FindElement(By.Name("userid"));
             userIdControl.Click();
-            userIdControl.SendKeys(config.Username);
+            userIdControl.SendKeys(_config.KaschusoUsername);
 
-            var passwordControl = driver.FindElement(By.Name("password"));
+            var passwordControl = _driver.FindElement(By.Name("password"));
             passwordControl.Click();
-            passwordControl.SendKeys(config.Password);
+            passwordControl.SendKeys(_config.KaschusoPassword);
             passwordControl.Submit();
-            return driver.Title == "schulNetz";
+            return _driver.Title == "schulNetz";
         }
 
         private Mark[] GetNewMarks()
         {
-            driver.Navigate().Refresh();
-         
-            var marksTable = driver.FindElements(By.TagName("table"))[2];
+            _driver.Navigate().Refresh();
+
+            var marksTable = _driver.FindElements(By.TagName("table"))[2];
 
             var rows = marksTable.FindElements(By.XPath(".//tbody/tr"));
             if (rows.Any(x => x.Text.Contains("Sie haben alle")))
@@ -79,17 +78,10 @@ namespace KaschusoNotifier
             foreach (var row in rows)
             {
                 var cells = row.FindElements(By.XPath(".//td"));
-                if (cells.All(x => marks.All(y => y.Subject != x.Text)))
+                if (cells.All(x => _marks.All(y => y.Subject != x.Text)))
                     newMarks.Add(new Mark(cells[0].Text, cells[1].Text, cells[3].Text));
             }
             return newMarks.ToArray();
-        }
-
-        private IWebDriver CreateWebDriver(bool headless)
-        {
-            var options = new ChromeOptions();
-            if (headless) options.AddArgument("headless");
-            return new ChromeDriver("driver", options);
         }
     }
 }

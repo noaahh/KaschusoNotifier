@@ -18,10 +18,10 @@ namespace KaschusoNotifier
                 Port = 587,
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(config.MailUsername, config.MailPassword),
+                Credentials = new NetworkCredential(config.GmailUsername, config.GmailPassword),
                 Timeout = 20000
             };
-            var message = new MailMessage(config.MailUsername, config.MailUsername)
+            var message = new MailMessage(config.GmailUsername, config.GmailUsername)
             {
                 Subject = MailSubject,
                 Body = Mark.GenerateBody(marks)
