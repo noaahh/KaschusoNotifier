@@ -9,80 +9,83 @@ namespace KaschusoNotifier
 {
     internal class Program
     {
-        private static readonly MailIssuer MailIssuer = new MailIssuer();
+        private readonly Config config = new Config();
 
-        private static readonly List<Mark> UnconfirmedMarks = new List<Mark>();
-        public static IWebDriver Driver { get; private set; }
+        private readonly MailIssuer MailIssuer = new MailIssuer();
 
-        private static void Main(string[] args)
+        private readonly List<Mark> marks = new List<Mark>();
+
+        private readonly IWebDriver driver;
+
+        public Program() => driver = CreateWebDriver(config.Headless);
+
+        private static void Main(string[] args) => new Program().Run();
+
+        public void Run()
         {
-            Config.Load();
-            Credentials.Load();
-            Driver = CreateWebDriver(Config.Headless);
             if (!Login())
             {
                 Console.WriteLine("Login failed. Please check your credentials");
-                Driver.Quit();
+                driver.Quit();
                 return;
             }
 
             Console.WriteLine("Login successful");
+            
+            marks.AddRange(GetNewMarks());
 
             while (true)
             {
-                var unconfirmedMarks = GetUnconfirmedMarks();
-                foreach (var unconfirmedMark in unconfirmedMarks) Console.WriteLine(unconfirmedMark.Name);
-                if (unconfirmedMarks.Length > 0)
+                var newMarks = GetNewMarks();
+                foreach (var newMark in newMarks) Console.WriteLine(newMark.Name);
+                if (newMarks.Length > 0 && MailIssuer.Notify(newMarks))
                 {
-                    MailIssuer.Notify(unconfirmedMarks);
+                    marks.AddRange(newMarks);
                 }
                 else
                 {
-                    Console.WriteLine("No unconfirmed mark found");
+                    Console.WriteLine("No new marks found");
                     Thread.Sleep(5000);
-                    Driver.Navigate().Refresh();
                 }
             }
         }
 
-        private static bool Login()
+        private bool Login()
         {
-            Driver.Url = "https://kaschuso.so.ch/gibsso";
-            var userIdControl = Driver.FindElement(By.Name("userid"));
+            driver.Url = config.URL;
+            var userIdControl = driver.FindElement(By.Name("userid"));
             userIdControl.Click();
-            userIdControl.SendKeys(Credentials.Username);
+            userIdControl.SendKeys(config.Username);
 
-            var passwordControl = Driver.FindElement(By.Name("password"));
+            var passwordControl = driver.FindElement(By.Name("password"));
             passwordControl.Click();
-            passwordControl.SendKeys(Credentials.Password);
+            passwordControl.SendKeys(config.Password);
             passwordControl.Submit();
-            return Driver.Title == "schulNetz";
+            return driver.Title == "schulNetz";
         }
 
-        private static Mark[] GetUnconfirmedMarks()
+        private Mark[] GetNewMarks()
         {
-            var unconfirmedTables =
-                Driver.FindElements(By.TagName("table"));
+            driver.Navigate().Refresh();
+         
+            var marksTable = driver.FindElements(By.TagName("table"))[2];
 
-            var unconfirmedTable = unconfirmedTables[2];
-            var rows = unconfirmedTable.FindElements(By.XPath(".//tbody/tr"));
+            var rows = marksTable.FindElements(By.XPath(".//tbody/tr"));
             if (rows.Any(x => x.Text.Contains("Sie haben alle")))
             {
                 return new Mark[0];
             }
-            var discoveredMarks = new List<Mark>();
+            var newMarks = new List<Mark>();
             foreach (var row in rows)
             {
                 var cells = row.FindElements(By.XPath(".//td"));
-                if (cells.All(x => UnconfirmedMarks.All(y => y.Subject != x.Text)))
-                    discoveredMarks.Add(new Mark(cells[0].Text, cells[1].Text, cells[3].Text));
+                if (cells.All(x => marks.All(y => y.Subject != x.Text)))
+                    newMarks.Add(new Mark(cells[0].Text, cells[1].Text, cells[3].Text));
             }
-
-            UnconfirmedMarks.AddRange(discoveredMarks);
-            return discoveredMarks.ToArray();
+            return newMarks.ToArray();
         }
 
-        private static IWebDriver CreateWebDriver(bool headless)
+        private IWebDriver CreateWebDriver(bool headless)
         {
             var options = new ChromeOptions();
             if (headless) options.AddArgument("headless");

@@ -8,17 +8,36 @@ namespace KaschusoNotifier
     {
         private const string FilePath = "config.json";
 
-        public static bool Headless { get; private set; }
+        private readonly IConfiguration configuration;
 
-        public static string ToAddress { get; private set; }
+        public bool Headless { get; private set; }
 
-        public static void Load()
+        public string URL { get; private set; }
+
+        public string Username { get; private set; }
+
+        public string Password { get; private set; }
+
+        public string MailUsername { get; private set; }
+
+        public string MailPassword { get; private set; }
+
+        public Config()
         {
-            IConfiguration credentials = new ConfigurationBuilder()
+            configuration = new ConfigurationBuilder()
                 .AddJsonFile(FilePath, true, true)
                 .Build();
-            Headless = Convert.ToBoolean(credentials.GetChildren().FirstOrDefault(x => x.Key == "headless")?.Value);
-            ToAddress = credentials.GetChildren().FirstOrDefault(x => x.Key == "toAddress")?.Value;
+            Headless = Convert.ToBoolean(FindValue("headless"));
+            URL = FindValue("url");
+            Username = FindValue("username");
+            Password = FindValue("password");
+            MailUsername = FindValue("mailUsername");
+            MailPassword = FindValue("mailPassword");
+        }
+
+        public string FindValue(string key)
+        {
+            return configuration.GetChildren().FirstOrDefault(x => x.Key == key)?.Value;
         }
     }
 }
