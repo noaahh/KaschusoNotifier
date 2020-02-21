@@ -3,11 +3,13 @@ services:
   selenium:
     image: selenium/standalone-chrome:3.141.59-zirconium
     container_name: selenium
+    restart: unless-stopped
     ports:
       - "4444:4444"
   notifier:
     image: kaschuso-notifier
     container_name: kaschuso-notifier
+    restart: unless-stopped
     environment:
     - DriverUrl=http://selenium:4444/wd/hub
     - KaschusoUrl=https://kaschuso.so.ch/gibsso
