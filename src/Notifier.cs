@@ -33,19 +33,22 @@ namespace KaschusoNotifier
 
             _marks.AddRange(GetNewMarks());
 
-            while (true)
+            var autoEvent = new AutoResetEvent(false);
+            new Timer(this.CheckForNewMarks, autoEvent, 5000, 60000);
+            autoEvent.WaitOne();
+        }
+
+        private void CheckForNewMarks(object stateInfo)
+        {
+            var newMarks = GetNewMarks();
+            foreach (var newMark in newMarks) Console.WriteLine(newMark.Name);
+            if (newMarks.Length > 0 && _mailIssuer.Notify(newMarks))
             {
-                var newMarks = GetNewMarks();
-                foreach (var newMark in newMarks) Console.WriteLine(newMark.Name);
-                if (newMarks.Length > 0 && _mailIssuer.Notify(newMarks))
-                {
-                    _marks.AddRange(newMarks);
-                }
-                else
-                {
-                    Console.WriteLine("No new marks found");
-                    Thread.Sleep(5000);
-                }
+                _marks.AddRange(newMarks);
+            }
+            else
+            {
+                Console.WriteLine("No new marks found");
             }
         }
 
