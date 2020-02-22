@@ -7,7 +7,7 @@ services:
     ports:
       - "4444:4444"
   notifier:
-    image: thisnoah/kaschuso-notifer
+    image: thisnoah/kaschuso-notifier
     container_name: kaschuso-notifier
     restart: unless-stopped
     environment:
