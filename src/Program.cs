@@ -7,20 +7,24 @@ namespace KaschusoNotifier
 {
     public class Program
     {
+        private static readonly Config Config = new Config();
+        private static Notifier _notifier;
+
         public static void Main(string[] args)
         {
-            var config = new Config();
-            new Notifier(CreateWebDriver(config), config).Run();
+            Console.WriteLine("Creating default Notifier");
+            _notifier = new Notifier(CreateWebDriver(), Config);
+
+            Console.WriteLine("Starting Notifier");
+            _notifier.Start();
         }
 
-        private static IWebDriver CreateWebDriver(Config config)
+        private static IWebDriver CreateWebDriver()
         {
-            Console.WriteLine(config.DriverUrl);
-            Console.WriteLine(config.KaschusoUsername);
             var options = new ChromeOptions();
-            return config.DriverUrl == "driver" 
-                ? new ChromeDriver(config.DriverUrl, options) 
-                : new RemoteWebDriver(new Uri(config.DriverUrl), options);
+            return Config.DriverUrl == "driver"
+                ? new ChromeDriver(Config.DriverUrl, options)
+                : new RemoteWebDriver(new Uri(Config.DriverUrl), options);
         }
     }
 }

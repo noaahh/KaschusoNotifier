@@ -8,18 +8,6 @@ namespace KaschusoNotifier
         private const string FilePath = "appsettings.json";
         private readonly IConfiguration _configuration;
 
-        public string DriverUrl { get; }
-
-        public string KaschusoUrl { get; }
-
-        public string KaschusoUsername { get; }
-
-        public string KaschusoPassword { get; }
-
-        public string GmailUsername { get; }
-
-        public string GmailPassword { get; }
-
         public Config()
         {
             _configuration = new ConfigurationBuilder()
@@ -34,6 +22,18 @@ namespace KaschusoNotifier
             GmailUsername = FindValue("GmailUsername");
             GmailPassword = FindValue("GmailPassword");
         }
+
+        public string DriverUrl { get; }
+
+        public string KaschusoUrl { get; }
+
+        public string KaschusoUsername { get; }
+
+        public string KaschusoPassword { get; }
+
+        public string GmailUsername { get; }
+
+        public string GmailPassword { get; }
 
         public string FindValue(string key)
         {

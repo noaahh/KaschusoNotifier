@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 
@@ -6,9 +7,13 @@ namespace KaschusoNotifier
 {
     public class MailIssuer
     {
-        private readonly Config config = new Config();
-
         private const string MailSubject = "KaschusoNotifier";
+        private readonly Config _config;
+
+        public MailIssuer(Config config)
+        {
+            _config = config;
+        }
 
         public bool Notify(Mark[] marks)
         {
@@ -17,26 +22,33 @@ namespace KaschusoNotifier
                 Host = "smtp.gmail.com",
                 Port = 587,
                 EnableSsl = true,
+                // UseDefaultCredentials = false,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(config.GmailUsername, config.GmailPassword),
+                Credentials = new NetworkCredential(_config.GmailUsername, _config.GmailPassword),
                 Timeout = 20000
             };
-            var message = new MailMessage(config.GmailUsername, config.GmailUsername)
+            var mailMessage = new MailMessage(_config.GmailUsername, _config.GmailUsername)
             {
                 Subject = MailSubject,
-                Body = Mark.GenerateBody(marks)
+                Body = GenerateBody(marks)
             };
+
             try
             {
-                smtpClient.Send(message);
+                smtpClient.Send(mailMessage);
             }
             catch (Exception e)
             {
+                Console.WriteLine("Mail delivery failed. Check your Gmail credentials.");
                 Console.WriteLine(e);
                 return false;
             }
-
             return true;
+        }
+
+        public static string GenerateBody(Mark[] marks)
+        {
+            return marks.Aggregate("", (current, mark) => current + $"{mark.Subject} | {mark.Name}: {mark.Value}\n\n");
         }
     }
 }
