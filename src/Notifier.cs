@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -15,6 +15,7 @@ namespace KaschusoNotifier
         private readonly MailIssuer _mailIssuer;
         private readonly List<Mark> _marks = new List<Mark>();
         private readonly Timer _timer;
+        private readonly AutoResetEvent _autoResetEvent;
 
         public Notifier(IWebDriver driver, Config config)
         {
@@ -27,6 +28,7 @@ namespace KaschusoNotifier
                 Interval = 1000 * 60 // 1 minute
             };
             _timer.Elapsed += OnTimerElapsed;
+            _autoResetEvent = new AutoResetEvent(false);
         }
 
         public void Start()
@@ -41,18 +43,26 @@ namespace KaschusoNotifier
             Console.WriteLine("Login successful");
 
             // Adding initial marks to discovered marks
-            var initialMarks = GetNewMarks();
-            _marks.AddRange(initialMarks);
-            Console.WriteLine($"{initialMarks.Length} mark(s) already existing:");
-            PrintMarks(initialMarks);
+            try
+            {
+                var initialMarks = GetNewMarks();
+                _marks.AddRange(initialMarks);
+                Console.WriteLine($"{initialMarks.Length} mark(s) already existing:");
+                PrintMarks(initialMarks);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Stop();
+                return;
+            }
 
             Console.WriteLine("Starting frequent mark check");
             Console.WriteLine($"Interval: {_timer.Interval} ms");
             _timer.Start();
             _timer.Enabled = true;
 
-            var autoEvent = new AutoResetEvent(false);
-            autoEvent.WaitOne();
+            _autoResetEvent.WaitOne();
         }
 
         public void Stop()
@@ -61,6 +71,7 @@ namespace KaschusoNotifier
             _timer.Stop();
             _driver.Quit();
             Console.WriteLine("Notifier stopped");
+            _autoResetEvent.Set();
         }
 
         private void OnTimerElapsed(object sender, ElapsedEventArgs e)
@@ -100,7 +111,7 @@ namespace KaschusoNotifier
             foreach (var row in rows)
             {
                 var cells = row.FindElements(By.XPath(".//td"));
-                if (cells.All(x => _marks.All(y => y.Name != x.Text)))
+                if (_marks.All(x => cells[0].Text != x.Subject && cells[1].Text != x.Name && cells[3].Text != x.Value))
                     newMarks.Add(new Mark(cells[0].Text, cells[1].Text, cells[3].Text));
             }
 
