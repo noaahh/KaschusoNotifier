@@ -103,7 +103,7 @@ namespace KaschusoNotifier
         {
             _driver.Navigate().Refresh();
 
-            var marksTable = _driver.FindElements(By.TagName("table"))[2];
+            var marksTable = _driver.FindElement(By.XPath("/html/body/div[4]/div/main/div/div/main/div/div/div[5]/table"));
 
             var rows = marksTable.FindElements(By.XPath(".//tbody/tr"));
             if (rows.Any(x => x.Text.Contains("Sie haben alle"))) return new Mark[0];
