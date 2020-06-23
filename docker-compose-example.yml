@@ -1,7 +1,7 @@
 version: "3"
 services:
   kaschuso-notifier:
-    build: ./
+    image: thisnoah/kaschuso-notifier:latest
     container_name: kaschuso-notifier
     restart: unless-stopped
     environment:
