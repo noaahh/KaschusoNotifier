@@ -37,15 +37,18 @@ docker ps
 
 #### Environment Variables
 
-* `KaschusoUrl` - The URL to your school specific Kaschuso
-* `KaschusoUsername` - Kaschuso username
-* `KaschusoPassword` - Kaschuso password
-* `GmailUsername` - Gmail username (Address) for mail delivery
-* `GmailPassword` - Gmail password for mail delivery
+* `url` - The URL to your school specific Kaschuso
+* `username` - Kaschuso username
+* `password` - Kaschuso password
+* `gmailUsername` - Gmail username (Address) for mail delivery
+* `gmailPassword` - Gmail password for mail delivery
+* `emailRecipient` - The mail address of the recipient of the mails
 
 ## Built With
 
-* https://github.com/SeleniumHQ/docker-selenium
+* https://github.com/puppeteer/puppeteer
+* https://github.com/cheeriojs/cheerio
+* https://github.com/nodemailer/nodemailer
 
 ## License
 
