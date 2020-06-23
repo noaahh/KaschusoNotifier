@@ -1,0 +1,13 @@
+version: "3"
+services:
+  kaschuso-notifier:
+    build: ./
+    container_name: kaschuso-notifier
+    restart: unless-stopped
+    environment:
+    - 'url=https://kaschuso.so.ch/gibsso'
+    - 'username=john.doe'
+    - 'password=mypassword1234'
+    - 'gmailUsername=myaddress@gmail.com'
+    - 'gmailPassword=my@gmailpassword'
+    - 'emailRecipient=myaddress@gmail.com'

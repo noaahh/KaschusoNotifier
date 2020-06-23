@@ -1,18 +1,9 @@
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1-buster-slim AS base
-WORKDIR /app
+FROM node:13.12.0-alpine3.10
+LABEL maintainer="noaahh"
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
-WORKDIR /src
-COPY ["src/KaschusoNotifier.csproj", "KaschusoNotifier/"]
-RUN dotnet restore "KaschusoNotifier/KaschusoNotifier.csproj"
+RUN apk add --no-cache chromium nss freetype freetype-dev harfbuzz ca-certificates ttf-freefont
 
-WORKDIR "/src/KaschusoNotifier"
+WORKDIR /usr/src/app
 COPY . .
-
-FROM build AS publish
-RUN dotnet publish "KaschusoNotifier.csproj" -c Release -o /app
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app .
-ENTRYPOINT ["dotnet", "KaschusoNotifier.dll"]
+RUN yarn install
+CMD ["npm","start"]

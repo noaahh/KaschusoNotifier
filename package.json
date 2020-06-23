@@ -1,0 +1,33 @@
+{
+  "name": "kaschuso-notifier",
+  "version": "2.0.0",
+  "description": "Notifies you about your latest mark available for confirmation",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noaahh/KaschusoNotifier.git"
+  },
+  "keywords": [
+    "notifier",
+    "kaschuso",
+    "solothurn"
+  ],
+  "author": "noaahh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/noaahh/KaschusoNotifier/issues"
+  },
+  "homepage": "https://github.com/noaahh/KaschusoNotifier#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "dotenv": "^8.2.0",
+    "inquirer": "^7.1.0",
+    "log-timestamp": "^0.3.0",
+    "nodemailer": "^6.4.10",
+    "puppeteer-core": "^2.1.1"
+  }
+}
