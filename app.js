@@ -136,8 +136,12 @@ async function getMarks(page) {
     const content = await page.content();
     const $ = cheerio.load(content);
     const markTable = $('#content-card > div > div:nth-child(5) > table');
-    const markRows = $(markTable).find('tbody > tr');
 
+    if ($(markTable).has('.empty-row')) {
+        return [];
+    }
+
+    const markRows = $(markTable).find('tbody > tr');
     const marks = [];
     markRows.each((index, value) => {
         const rowData = $(value).find('td').toArray();
@@ -146,7 +150,7 @@ async function getMarks(page) {
             name: $(rowData[1]).text(),
             date: $(rowData[2]).text(),
             value: $(rowData[3]).text(),
-        }
+        };
         marks.push(mark);
     });
     return marks;
