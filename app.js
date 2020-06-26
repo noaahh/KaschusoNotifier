@@ -3,6 +3,8 @@ require('log-timestamp');
 const puppeteer = require('puppeteer-core');
 const cheerio = require('cheerio');
 const fs = require('fs');
+const treekill = require('tree-kill');
+const dayjs = require('dayjs');
 
 const inquirer = require('./input');
 const mail = require('./mail');
@@ -156,8 +158,26 @@ async function getMarks(page) {
     return marks;
 }
 
-async function checkNewMarks(page) {
+async function checkNewMarks(browser, page) {
+    let lastBrowserCleanup = dayjs().add(browserClean, browserCleanUnit);
+    let firstRun = true;
     while (run) {
+        if (dayjs(lastBrowserCleanup).isBefore(dayjs())) {
+            console.log('Cleaning browser...');
+            const newSpawn = await cleanup(browser);
+            browser = newSpawn.browser;
+            page = newSpawn.page;
+            firstRun = true;
+            lastBrowserCleanup = dayjs().add(browserClean, browserCleanUnit);
+            console.log('Browser cleaned.');
+        }
+
+        if (firstRun) {
+            process.stdout.write('🔐 Checking login...');
+            await login(page);
+            firstRun = false;
+        }
+
         console.log('Checking for new marks...');
         const currentMarks = await getMarks(page);
         const newMarks = [];
@@ -184,6 +204,13 @@ async function shutDown() {
     process.exit();
 }
 
+async function cleanup(browser) {
+    const pages = await browser.pages();
+    await pages.map((page) => page.close());
+    await treekill(browser.process().pid, 'SIGKILL');
+    return await spawnBrowser();
+}
+
 async function main() {
     cookie = await initConfig();
     var {
@@ -191,13 +218,10 @@ async function main() {
         page
     } = await spawnBrowser();
 
-    process.stdout.write('🔐 Checking login...');
-    await login(page);
-
     console.log("=========================");
     console.log('🔭 Running notifier...');
 
-    await checkNewMarks(page);
+    await checkNewMarks(browser, page);
     await browser.close();
 };
 
