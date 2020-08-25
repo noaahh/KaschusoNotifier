@@ -113,7 +113,9 @@ async function spawnBrowser() {
 }
 
 async function login(page) {
-    await page.goto(config.url, { waitUntil: 'networkidle0' });
+    await page.goto(config.url, {
+        waitUntil: 'networkidle0'
+    });
     const usernameControl = await page.$('[name="userid"]');
     await usernameControl.type(config.username);
     await page.type('#password', config.password);
@@ -133,29 +135,33 @@ async function login(page) {
     return true;
 }
 
-async function getMarks(page) {
-    await page.reload({ waitUntil: 'networkidle0' });
+async function getCurrentMarks(page) {
+    await page.reload({
+        waitUntil: 'networkidle0'
+    });
     const content = await page.content();
     const $ = cheerio.load(content);
+
     const markTable = $('#content-card > div > div:nth-child(5) > table');
+    const marks = $(markTable)
+        .find('tbody > tr')
+        .toArray()
+        .map(x => {
+            const rowCellTexts = $(x)
+                .find('td')
+                .toArray()
+                .map(x => cleanText($(x).text()));
+            return {
+                subject: rowCellTexts[0],
+                name: rowCellTexts[1],
+                date: rowCellTexts[2],
+                value: rowCellTexts[3],
+            };
+        });
 
-    if ($(markTable).has('.empty-row')) {
-        return [];
-    }
-
-    const markRows = $(markTable).find('tbody > tr');
-    const marks = [];
-    markRows.each((index, value) => {
-        const rowData = $(value).find('td').toArray();
-        const mark = {
-            subject: $(rowData[0]).text(),
-            name: $(rowData[1]).text(),
-            date: $(rowData[2]).text(),
-            value: $(rowData[3]).text(),
-        };
-        marks.push(mark);
-    });
-    return marks;
+    return marks.some(x => !x.name || !x.date || !x.value) ?
+        [] :
+        marks;
 }
 
 async function checkNewMarks(browser, page) {
@@ -179,8 +185,8 @@ async function checkNewMarks(browser, page) {
         }
 
         console.log('Checking for new marks...');
-        const currentMarks = await getMarks(page);
         const newMarks = [];
+        const currentMarks = await getCurrentMarks(page);
         currentMarks.forEach(mark => {
             if (!discoveredMarks.some(x => x.subject === mark.subject && x.name === mark.name && x.value === mark.value)) {
                 newMarks.push(mark);
@@ -224,6 +230,10 @@ async function main() {
     await checkNewMarks(browser, page);
     await browser.close();
 };
+
+function cleanText(text) {
+    return text.trim();
+}
 
 main();
 

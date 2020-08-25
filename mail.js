@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 
 let transporter;
+
 function init(config) {
     if (!transporter) {
         transporter = nodemailer.createTransport({
@@ -15,7 +16,9 @@ function init(config) {
 }
 
 function createMessageBody(config, marks) {
-    let body = '<h2>Your latest mark available for confirmation:</h2><hr>'
+    let body = '<h2>Your latest marks available for confirmation:</h2><hr>'
+    
+    marks = marks.sort((a, b) => a.value - b.value);
     marks.forEach(mark => {
         body += `<h3>${mark.name}: ${mark.value}</h3>`;
         body += `<h4>${mark.subject}</h4>`;
@@ -32,7 +35,7 @@ exports.sendMail = async (config, marks) => {
         await transporter.sendMail({
             from: `"KaschusoNotifier 📢" <${config.gmailUsername}>`,
             to: config.emailRecipient,
-            subject: "You have a new mark in your Kaschuso ❗",
+            subject: "You have new marks in your Kaschuso ❗",
             html: createMessageBody(config, marks)
         });
         console.log('Mail sent.');
