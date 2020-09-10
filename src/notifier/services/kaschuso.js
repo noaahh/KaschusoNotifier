@@ -1,34 +1,16 @@
-require('dotenv').config();
-require('log-timestamp');
 const puppeteer = require('puppeteer-core');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const treekill = require('tree-kill');
 const dayjs = require('dayjs');
-
 const inquirer = require('./input');
-const mail = require('./mail');
-
-let run = true;
-
-// Config
-const configPath = './config.json'
-const userAgent = (process.env.userAgent || 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
-
-const proxy = (process.env.proxy || ""); // ip:port
-const proxyAuth = (process.env.proxyAuth || "");
 
 const browserClean = 1;
 const browserCleanUnit = 'hour';
 
-const discoveredMarks = [];
-
-let config = {
-    url: null,
-    username: null,
-    password: null
-};
-
+const configPath = './config.json';
+const userAgent = (process.env.userAgent || 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+const proxyAuth = (process.env.proxyAuth || '');
 let browserConfig = {
     headless: true,
     args: [
@@ -42,13 +24,21 @@ let browserConfig = {
     ]
 };
 
+let config = {
+    url: null,
+    username: null,
+    password: null
+};
+let configured;
+let browser;
+let page;
+let lastBrowserCleanup = dayjs().add(browserClean, browserCleanUnit);
+
 async function initConfig() {
     try {
-        if (proxy) browserConfig.args.push('--proxy-server=' + proxy);
-
-        console.log('🔎 Checking config file...');
+        console.log('Initializing config...');
         if (fs.existsSync(configPath)) {
-            console.log('✅ Json config found!');
+            console.log('Json config found!');
             let configFile = JSON.parse(fs.readFileSync(configPath, 'utf8'))
             browserConfig.executablePath = configFile.exec;
             config.url = configFile.url;
@@ -58,7 +48,7 @@ async function initConfig() {
             config.gmailPassword = configFile.gmailPassword;
             config.emailRecipient = configFile.emailRecipient;
         } else if (process.env.url) {
-            console.log('✅ Env config found');
+            console.log('Env config found');
             browserConfig.executablePath = '/usr/bin/chromium-browser';
             config.url = process.env.url;
             config.username = process.env.username;
@@ -67,7 +57,7 @@ async function initConfig() {
             config.gmailPassword = process.env.gmailPassword;
             config.emailRecipient = process.env.emailRecipient;
         } else {
-            console.log('❌ No config file found!');
+            console.log('No config file found!');
             let input = await inquirer.askLogin();
             fs.writeFile(configPath, JSON.stringify(input), function (err) {
                 if (err) {
@@ -82,37 +72,38 @@ async function initConfig() {
             config.gmailPassword = input.gmailPassword;
             config.emailRecipient = input.emailRecipient;
         }
+        configured = true;
     } catch (e) {
         console.log('Error: ', e);
     }
 }
 
-async function spawnBrowser() {
-    console.log("=========================");
-    console.log('📱 Launching browser...');
-    var browser = await puppeteer.launch(browserConfig);
-    var page = await browser.newPage();
+async function initBrowser(recreate) {
+    if (!recreate && browser && page) {
+        return;
+    }
 
-    console.log('🔧 Setting User-Agent...');
-    await page.setUserAgent(userAgent); //Set userAgent
+    browser = await puppeteer.launch(browserConfig);
+    page = await browser.newPage();
+    await page.setUserAgent(userAgent);
 
-    console.log('⏰ Setting timeouts...');
     page.setDefaultNavigationTimeout(process.env.timeout || 0);
     page.setDefaultTimeout(process.env.timeout || 0);
 
     if (proxyAuth) {
-        await page.setExtraHTTPHeaders({
-            'Proxy-Authorization': 'Basic ' + Buffer.from(proxyAuth).toString('base64')
-        })
+        const credentials = proxyAuth.split(':');
+        await page.authenticate({
+            'username': credentials[0],
+            'password': credentials[1]
+        });
     }
-
-    return {
-        browser,
-        page
-    };
 }
 
-async function login(page) {
+async function authenticate() {
+    if (await isAuthenticated()) {
+        return true;
+    }
+
     await page.goto(config.url, {
         waitUntil: 'networkidle0'
     });
@@ -124,18 +115,19 @@ async function login(page) {
     await submitControl.click();
     await page.waitForNavigation();
 
-    const pageTitle = await page.title();
-    if (pageTitle !== 'schulNetz') {
-        console.log('🛑 Login failed!');
-        console.log('🔑 Invalid credentials!');
-        process.exit();
+    if (!await isAuthenticated()) {
+        console.log('Authentication failed. Check the credentials.');
+        return false;
     }
 
-    console.log('✅ Login successful!');
     return true;
 }
 
-async function getCurrentMarks(page) {
+async function isAuthenticated() {
+    return await page.title() === 'schulNetz';
+}
+
+async function loadMarks() {
     await page.reload({
         waitUntil: 'networkidle0'
     });
@@ -159,83 +151,37 @@ async function getCurrentMarks(page) {
             };
         });
 
-    return marks.some(x => !x.name || !x.date || !x.value) ?
-        [] :
+    return marks.some(x => !x.name || !x.date || !x.value) ? [] :
         marks;
 }
 
-async function checkNewMarks(browser, page) {
-    let lastBrowserCleanup = dayjs().add(browserClean, browserCleanUnit);
-    let firstRun = true;
-    while (run) {
-        if (dayjs(lastBrowserCleanup).isBefore(dayjs())) {
-            console.log('Cleaning browser...');
-            const newSpawn = await cleanup(browser);
-            browser = newSpawn.browser;
-            page = newSpawn.page;
-            firstRun = true;
-            lastBrowserCleanup = dayjs().add(browserClean, browserCleanUnit);
-            console.log('Browser cleaned.');
-        }
-
-        if (firstRun) {
-            process.stdout.write('🔐 Checking login...');
-            await login(page);
-            firstRun = false;
-        }
-
-        console.log('Checking for new marks...');
-        const newMarks = [];
-        const currentMarks = await getCurrentMarks(page);
-        currentMarks.forEach(mark => {
-            if (!discoveredMarks.some(x => x.subject === mark.subject && x.name === mark.name && x.value === mark.value)) {
-                newMarks.push(mark);
-            }
-        });
-
-        if (newMarks && newMarks.length > 0) {
-            console.log(`${newMarks.length} marks available. Sending mail...`);
-            await mail.sendMail(config, newMarks);
-            discoveredMarks.push(...newMarks);
-        } else {
-            console.log(`Couldn't find any new marks.`);
-        }
-
-        await page.waitFor(60000);
+async function getCurrentMarks() {
+    if (!configured) {
+        await initConfig();
     }
+    await initBrowser();
+
+    if (dayjs(lastBrowserCleanup).isBefore(dayjs())) {
+        await cleanup();
+        lastBrowserCleanup = dayjs().add(browserClean, browserCleanUnit);
+        console.log('Browser cleaned');
+    }
+
+    await authenticate(page);
+    return await loadMarks(page);
 }
 
-async function shutDown() {
-    run = false;
-    process.exit();
-}
-
-async function cleanup(browser) {
+async function cleanup() {
     const pages = await browser.pages();
     await pages.map((page) => page.close());
     await treekill(browser.process().pid, 'SIGKILL');
-    return await spawnBrowser();
+    await initBrowser(true);
 }
-
-async function main() {
-    cookie = await initConfig();
-    var {
-        browser,
-        page
-    } = await spawnBrowser();
-
-    console.log("=========================");
-    console.log('🔭 Running notifier...');
-
-    await checkNewMarks(browser, page);
-    await browser.close();
-};
 
 function cleanText(text) {
     return text.trim();
 }
 
-main();
-
-process.on("SIGINT", shutDown);
-process.on("SIGTERM", shutDown);
+module.exports = {
+    getCurrentMarks
+};

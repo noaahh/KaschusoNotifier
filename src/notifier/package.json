@@ -1,0 +1,61 @@
+{
+  "name": "kaschuso-notifier",
+  "version": "2.0.0",
+  "description": "Notifies you about your latest mark available for confirmation",
+  "main": "app.js",
+  "scripts": {
+    "mongo:start": "docker run --name realworld-mongo -p 27017:27017 mongo & sleep 5",
+    "start": "node ./app.js",
+    "dev": "nodemon ./app.js",
+    "test": "newman run ./tests/api-tests.postman.json -e ./tests/env-api-tests.postman.json",
+    "stop": "lsof -ti :3000 | xargs kill",
+    "mongo:stop": "docker stop realworld-mongo && docker rm realworld-mongo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noaahh/KaschusoNotifier.git"
+  },
+  "keywords": [
+    "notifier",
+    "kaschuso",
+    "solothurn"
+  ],
+  "author": "noaahh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/noaahh/KaschusoNotifier/issues"
+  },
+  "homepage": "https://github.com/noaahh/KaschusoNotifier#readme",
+  "dependencies": {
+    "body-parser": "1.15.0",
+    "cheerio": "^1.0.0-rc.3",
+    "cors": "2.7.1",
+    "dayjs": "^1.8.28",
+    "dotenv": "^8.2.0",
+    "ejs": "2.4.1",
+    "errorhandler": "1.4.3",
+    "express": "4.13.4",
+    "express-jwt": "3.3.0",
+    "express-session": "1.13.0",
+    "inquirer": "^7.3.3",
+    "jsonwebtoken": "7.1.9",
+    "log-timestamp": "^0.3.0",
+    "method-override": "2.3.5",
+    "methods": "1.1.2",
+    "mongoose": "4.4.10",
+    "mongoose-unique-validator": "1.0.2",
+    "morgan": "1.7.0",
+    "nodemailer": "^6.4.10",
+    "passport": "0.3.2",
+    "passport-local": "1.0.0",
+    "puppeteer-core": "^2.1.1",
+    "request": "2.69.0",
+    "slug": "0.9.1",
+    "tree-kill": "^1.2.2",
+    "underscore": "1.8.3"
+  },
+  "devDependencies": {
+    "newman": "^3.8.2",
+    "nodemon": "^2.0.4"
+  }
+}
