@@ -21,7 +21,8 @@ const proxyAuth = (process.env.proxyAuth || "");
 const browserClean = 1;
 const browserCleanUnit = 'hour';
 
-const discoveredMarks = [];
+const marksFilePath = './marks.json';
+let discoveredMarks = [];
 
 let config = {
     url: null,
@@ -159,8 +160,7 @@ async function getCurrentMarks(page) {
             };
         });
 
-    return marks.some(x => !x.name || !x.date || !x.value) ?
-        [] :
+    return marks.some(x => !x.name || !x.date || !x.value) ? [] :
         marks;
 }
 
@@ -194,15 +194,21 @@ async function checkNewMarks(browser, page) {
         });
 
         if (newMarks && newMarks.length > 0) {
-            console.log(`${newMarks.length} marks available. Sending mail...`);
-            await mail.sendMail(config, newMarks);
-            discoveredMarks.push(...newMarks);
+            console.log(`${newMarks.length} marks available.`);
+            await onNewMarks(newMarks);
         } else {
             console.log(`Couldn't find any new marks.`);
         }
 
         await page.waitFor(60000);
     }
+}
+
+async function onNewMarks(newMarks) {
+    await mail.sendMail(config, newMarks);
+
+    discoveredMarks.push(...newMarks);
+    fs.writeFileSync(marksFilePath, JSON.stringify(discoveredMarks));
 }
 
 async function shutDown() {
@@ -217,8 +223,16 @@ async function cleanup(browser) {
     return await spawnBrowser();
 }
 
-async function main() {
+async function init() {
+    if (fs.existsSync(marksFilePath)) {
+        discoveredMarks = JSON.parse(fs.readFileSync(marksFilePath));
+    }
     cookie = await initConfig();
+}
+
+async function main() {
+    await init();
+
     var {
         browser,
         page
