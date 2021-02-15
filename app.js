@@ -179,7 +179,7 @@ async function checkNewMarks(browser, page) {
         }
 
         if (firstRun) {
-            process.stdout.write('🔐 Checking login...');
+            console.log('🔐 Checking login...');
             await login(page);
             firstRun = false;
         }
